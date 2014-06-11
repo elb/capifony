@@ -20,6 +20,7 @@ module Capifony
         load 'symfony2/doctrine'
         load 'symfony2/propel'
         load 'symfony2/web'
+        load 'composer'
 
         # Symfony application path
         set :app_path,              "app"
@@ -48,25 +49,8 @@ module Capifony
         # Symfony build_bootstrap script
         set :build_bootstrap,       "bin/build_bootstrap"
 
-        # Whether to use composer to install vendors.
-        # If set to false, it will use the bin/vendors script
-        set :use_composer,          false
-
-        # Path to composer binary
-        # If set to false, Capifony will download/install composer
-        set :composer_bin,          false
-
-        # Options to pass to composer when installing/updating
-        set :composer_options,      "--no-scripts --verbose --prefer-dist"
-
-        # Whether to update vendors using the configured dependency manager (composer or bin/vendors)
-        set :update_vendors,        false
-
         # run bin/vendors script in mode (upgrade, install (faster if shared /vendor folder) or reinstall)
         set :vendors_mode,          "reinstall"
-
-        # Copy vendors from previous release
-        set :copy_vendors,          false
 
         # Whether to run cache warmup
         set :cache_warmup,          true
@@ -152,47 +136,6 @@ module Capifony
 
         # Be less verbose by default
         logger.level = Capistrano::Logger::IMPORTANT
-
-        def capifony_pretty_print(msg)
-          if logger.level == Capistrano::Logger::IMPORTANT
-            pretty_errors
-
-            msg = msg.slice(0, 57)
-            msg << '.' * (60 - msg.size)
-            print msg
-          else
-            puts msg.green
-          end
-        end
-
-        def capifony_puts_ok
-          if logger.level == Capistrano::Logger::IMPORTANT && !$error
-            puts '✔'.green
-          end
-
-          $error = false
-        end
-
-        def pretty_errors
-          if !$pretty_errors_defined
-            $pretty_errors_defined = true
-
-            class << $stderr
-              @@firstLine = true
-              alias _write write
-
-              def write(s)
-                if @@firstLine
-                  s = '✘' << "\n" << s
-                  @@firstLine = false
-                end
-
-                _write(s.red)
-                $error = true
-              end
-            end
-          end
-        end
 
         [
           "symfony:doctrine:cache:clear_metadata",

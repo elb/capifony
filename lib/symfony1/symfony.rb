@@ -30,6 +30,13 @@ namespace :symfony do
     run "#{try_sudo} ln -nfs #{shared_path}/symfony-#{version} #{symlink_path};"
   end
 
+  desc "Copy plugins"
+  task :copy_plugins do
+    capifony_pretty_print "--> Copying plugins from previous release"
+    run "pluginsDir=#{current_path}/plugins; if [ -d $pluginsDir ] || [ -h $pluginsDir ]; then cp -a $pluginsDir #{latest_release}/plugins; fi;"
+    capifony_puts_ok
+  end
+
   namespace :configure do
     desc "Configure database DSN"
     task :database do

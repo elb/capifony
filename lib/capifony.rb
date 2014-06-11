@@ -9,11 +9,63 @@ set :php_bin,           "php"
 
 set :remote_tmp_dir,    "/tmp"
 
+STDOUT.sync
+$error = false
+$pretty_errors_defined = false
+
+# Be less verbose by default
+#logger.level = Capistrano::Logger::INFO
+
+def remote_file_exists?(full_path)
+  'true' == capture("if [ -e #{full_path} ]; then echo 'true'; fi").strip
+end
+
 def prompt_with_default(var, default, &block)
   set(var) do
     Capistrano::CLI.ui.ask("#{var} [#{default}] : ", &block)
   end
   set var, default if eval("#{var.to_s}.empty?")
+end
+
+def capifony_pretty_print(msg)
+  if logger.level == Capistrano::Logger::IMPORTANT
+    pretty_errors
+
+    msg = msg.slice(0, 57)
+    msg << '.' * (60 - msg.size)
+    print msg
+  else
+    puts msg
+  end
+end
+
+def pretty_errors
+  if !$pretty_errors_defined
+    $pretty_errors_defined = true
+
+    class << $stderr
+      @@firstLine = true
+      alias _write write
+
+      def write(s)
+        if @@firstLine
+          s = '✘' << "\n" << s
+          @@firstLine = false
+        end
+
+        _write(s.red)
+        $error = true
+      end
+    end
+  end
+end
+
+def capifony_puts_ok
+  if logger.level == Capistrano::Logger::IMPORTANT && !$error
+    puts '✔'.green
+  end
+
+  $error = false
 end
 
 namespace :deploy do

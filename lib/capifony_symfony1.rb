@@ -8,6 +8,7 @@ load 'symfony1/propel'
 load 'symfony1/shared'
 load 'symfony1/symfony'
 load 'symfony1/web'
+load 'composer'
 
 require 'yaml'
 
@@ -35,6 +36,10 @@ set(:symfony_lib)       { guess_symfony_lib }
 # Shared symfony lib
 set :use_shared_symfony, false
 set :symfony_version,    "1.4.18"
+
+set :vendor_dir,         "lib/vendor"
+
+set :copy_plugins,       false
 
 def guess_symfony_orm
   databases = YAML::load(IO.read('config/databases.yml'))
@@ -137,8 +142,28 @@ before "deploy:finalize_update" do
   end
 end
 
+["symfony:composer:install", "symfony:composer:update"].each do |action|
+  before action do
+    if copy_vendors
+      symfony.composer.copy_vendors
+    end
+    
+    if copy_plugins
+      symfony.copy_plugins
+    end
+  end
+end
+
 # After finalizing update:
 after "deploy:finalize_update" do
+  if use_composer
+    if update_vendors
+      symfony.composer.update
+    else
+      symfony.composer.install
+    end
+  end
+
   if use_orm
     symfony.orm.setup                     # 1. Ensure that ORM is configured
     symfony.orm.build_classes             # 2. (Re)build the model
